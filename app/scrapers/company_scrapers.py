@@ -18,11 +18,9 @@ def populate_company_from_crunchbase(company):
         company.description = company_info.get('description')
         company.summary = company_info.get('summary')
         company.crunchbase_data = company_info['crunchbase_data']
+        print 'summary = ' + str(company.summary)
+        print 'hq = ' + str(company.headquarters)
+        print 'DONE! ' + str(company.crunchbase_data)
+    print 'returning...'
     return company 
 
-
-def fetch_and_populate_company(db, linkedin_id, name):
-    company = Company(linkedin_id, name)
-    company = populate_company_from_crunchbase(company)
-    db.session.add(company)
-    return company
