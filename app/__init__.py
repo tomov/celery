@@ -1,4 +1,4 @@
-from tasks import make_celery
+from queue import make_celery
 from flask import Flask
 
 app = Flask(__name__)
@@ -8,7 +8,4 @@ app.config.update(
 )
 celery = make_celery(app)
 
-
-@celery.task()
-def add_together(a, b):
-    return a + b
+import endpoints
