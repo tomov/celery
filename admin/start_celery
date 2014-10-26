@@ -1,0 +1,7 @@
+# start four workers (crunchbase, angellist, glassdoor, company)
+# tracking their respective queues, with 2 threads per worker (8 threads total)
+#
+celery multi start crunchbase angellist glassdoor company \
+           -A app.celery -c 2 -l debug \
+           -Q:1 crunchbase -Q:2 angellist -Q3: glassdoor -Q4:company \
+           --pidfile=/var/run/celery/%n.pid --logfile=/var/log/celery/%n%I.log

@@ -1,0 +1,4 @@
+sudo mkdir -p /var/run/celery
+sudo mkdir -p /var/log/celery
+sudo chown -R ubuntu:ubuntu /var/run/celery
+sudo chown -R ubuntu:ubuntu /var/log/celery

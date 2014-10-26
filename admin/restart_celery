@@ -1,0 +1,2 @@
+celery multi restart crunchbase angellist glassdoor company \
+           -A app.celery -l info

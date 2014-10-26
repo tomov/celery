@@ -1,5 +1,6 @@
 from flask.ext.sqlalchemy import SQLAlchemy
 from datetime import datetime
+from datetime import timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import backref
 from sqlalchemy import desc
@@ -17,14 +18,13 @@ DATABASE_URI = DATABASE_URI_TEMPLATE.format(DATABASE_USER, DATABASE_PASS, DATABA
 
 db = SQLAlchemy()
 
-def _get_datetime():
-    return datetime.utcnow()
+DATETIME_TO_MYSQL_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 class Company(db.Model):
     __tablename__ = 'companies'
     id = db.Column(db.Integer, primary_key = True)
-    created = db.Column(db.DateTime, default=_get_datetime)
-    modified = db.Column(db.DateTime, onupdate=_get_datetime)
+    created = db.Column(db.DateTime, default=datetime.now)
+    modified = db.Column(db.DateTime, onupdate=datetime.now)
     linkedin_id = db.Column(db.String(length = 50), index = True, unique = True)
     name = db.Column(db.String(length = 50), index = True)
     logo_url = db.Column(db.Text)
@@ -64,7 +64,6 @@ class Company(db.Model):
     @staticmethod
     def from_linkedin_id(linkedin_id):
         return Company.query.filter_by(linkedin_id=str(linkedin_id)).first()
-
 
 def create_db():
     db.create_all()

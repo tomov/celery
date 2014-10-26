@@ -1,0 +1,1 @@
+celery -A app.celery worker -n $1 -c 1 -Q $1

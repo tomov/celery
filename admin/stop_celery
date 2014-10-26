@@ -1,0 +1,2 @@
+celery multi stop crunchbase angellist glassdoor company \
+           -A app.celery -l debug

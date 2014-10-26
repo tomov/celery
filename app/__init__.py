@@ -10,7 +10,13 @@ app = Flask(__name__)
 # celery task queue
 app.config.update(
     CELERY_BROKER_URL='amqp://localhost//',
-    CELERY_RESULT_BACKEND='amqp://localhost//'
+    CELERY_RESULT_BACKEND='amqp://localhost//',
+    CELERY_ROUTES = {
+        'app.tasks.add_together': {'queue': 'add'}, # TODO remove in prod
+        'app.tasks.subtract_together' : {'queue': 'subtract'}, # TODO remove in prod
+        'app.tasks.fetch_and_populate_company': {'queue': 'company'},
+        'app.scrapers.company_scrapers.fetch_company_from_crunchbase' : {'queue': 'crunchbase'}
+    },
 )
 celery = make_celery(app)
 

@@ -34,7 +34,7 @@ class CrunchBaseAPI:
                 print '                    FAILED; waiting ' + str(wait_secs) + ' seconds and trying again...'
         return result
 
-    def get_company_by_name(self, name):
+    def fetch_company_by_name(self, name):
         try:
             # do a search by the name and get the first result
             print 'looking up company ' + name
