@@ -1,6 +1,9 @@
 import time
 from datetime import datetime
 from datetime import timedelta
+import json
+import urllib
+import urllib2
 from celery.result import allow_join_result
 
 from app import celery
@@ -19,35 +22,24 @@ class SqlAlchemyTask(celery.Task):
         db.session.remove()
 
 @celery.task(base=SqlAlchemyTask)
-def subtract_together(a, b):
-    print 'executing task ' + str(a) + '-' + str(b)
-    time.sleep(5)
-    print 'done with task ' + str(a) + '-' + str(b)
-    return int(a) + int(b)
-
-@celery.task(base=SqlAlchemyTask)
-def add_together(a, b):
-    print 'executing task ' + str(a) + '+' + str(b)
-    time.sleep(5)
-    print 'done with task ' + str(a) + '+' + str(b)
-    return int(a) + int(b)
-
-@celery.task(base=SqlAlchemyTask)
-def fetch_and_populate_company(name, linkedin_id):
-    print 'TASK! fetch company ' + str(name) + ', ' + str(linkedin_id)
+def fetch_and_populate_company(name, linkedin_id, callback_url=None):
+    print 'TASK! fetch company ' + str(name.encode('utf8')) + ', ' + str(linkedin_id)
     crunchbase_result = None
     company_exists = False
+    if not linkedin_id:
+        # TODO make intelligent disambiguiation based on name
+        return 'Sorry no linkedin id'
     company = Company.from_linkedin_id(linkedin_id)
     if company:
         company_exists = True
-        print '    ...linkedin id ' + str(linkedin_id) + ' already exists as ' + str(company.name)
-        if not company.last_crunchbase_update or company.last_crunchbase_update < datetime.now() - timedelta(seconds=EXPIRATION_DAYS):
+        print '    ...linkedin id ' + str(linkedin_id) + ' already exists as ' + str(company.name.encode('utf8'))
+        if not company.last_crunchbase_update or company.last_crunchbase_update < datetime.now() - timedelta(days=EXPIRATION_DAYS):
             print '       crunchbase not updated for 7 days => updating'
             crunchbase_result = fetch_company_from_crunchbase.delay(company)
         else:
             print '       crunchbase updated recently => no crunchbase update necessary'
     else:
-        print '     ...' + str(name) + ', ' + str(linkedin_id) + ' does not exist => new company' 
+        print '     ...' + str(name.encode('utf8')) + ', ' + str(linkedin_id) + ' does not exist => new company' 
         company = Company(name, linkedin_id)
         crunchbase_result = fetch_company_from_crunchbase.delay(company)
 
@@ -59,5 +51,23 @@ def fetch_and_populate_company(name, linkedin_id):
         if not company_exists:
             db.session.add(company)
         db.session.commit()
+
+    print 'callback url = ' + str(callback_url)
+    if callback_url:
+        company_data = {
+                'name': company.name,
+                'remote_id': company.id,
+                'crunchbase_url': company.crunchbase_url,
+                'logo_url': company.logo_url,
+                'headquarters': company.headquarters,
+                'description': company.description,
+                'summary': company.summary
+        }
+        print '  sending to callback url ' + str(callback_url)
+        data = urllib.urlencode({'data': json.dumps(company_data)})
+        req = urllib2.Request(callback_url, data)
+        resp = urllib2.urlopen(req)
+        resp_html = resp.read()
+        print '  response to callback: ' + str(resp_html)
     return 'Done?' # TODO return meaningful result 
 

@@ -21,8 +21,8 @@ def populate_company_with_crunchbase_data(company, company_data):
         company.description = company_data.get('description')
         company.summary = company_data.get('summary')
         company.crunchbase_data = company_data['crunchbase_data']
-        company.last_crunchbase_update = datetime.now()
-        print 'DONE! ' + str(company.name) + ' at ' + str(company.last_crunchbase_update)
+    company.last_crunchbase_update = datetime.now()
+    print 'DONE! ' + str(company.name) + ' at ' + str(company.last_crunchbase_update)
 
 @celery.task()
 def fetch_company_from_crunchbase(company):
