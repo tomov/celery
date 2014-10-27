@@ -26,7 +26,7 @@ def populate_company_with_crunchbase_data(company, company_data):
 
 @celery.task()
 def fetch_company_from_crunchbase(company):
-    print '   Task! scrape company from crunchbase ' + str(company.name)
+    print '   Task! scrape company from crunchbase ' + str(company.name.encode('utf8'))
     company_data = crunchbase.fetch_company_by_name(company.name)
     return company_data
 
