@@ -52,21 +52,50 @@ class CrunchBaseAPI:
             result_raw = crunchbase.get(result['path'])
             result = json.loads(result_raw)
             if 'relationships' in result['data']:
+                # logo
                 if 'primary_image' in result['data']['relationships'] and len(result['data']['relationships']['primary_image']['items']) > 0:
                     company_info['logo_url'] = image_prefix + result['data']['relationships']['primary_image']['items'][0]['path']
+                # headquarters
                 if 'headquarters' in result['data']['relationships'] and len(result['data']['relationships']['headquarters']['items']) > 0:
-                    city = str(result['data']['relationships']['headquarters']['items'][0].get('city'))
-                    country = str(result['data']['relationships']['headquarters']['items'][0].get('country_code'))
-                    if city:
-                        company_info['headquarters'] = city
-                    elif country:
-                        company_info['headquarters'] = country
+                    company_info['headquarters_json'] = json.dumps({
+                        'city': result['data']['relationships']['headquarters']['items'][0].get('city'),
+                        'region': result['data']['relationships']['headquarters']['items'][0].get('region')
+                        'country': result['data']['relationships']['headquarters']['items'][0].get('country_code')
+                    })
             if 'properties' in result['data']:
+                # description
                 if 'description' in result['data']['properties']:
                     company_info['description'] = result['data']['properties']['description']
+                # summary
                 if 'short_description' in result['data']['properties']:
                     company_info['summary'] = result['data']['properties']['short_description']
+            # raw crucnhbase data 
             company_info['crunchbase_data'] = result_raw
+            # industries
+            industries = []
+            if 'categories' in result['data']['relationships']:
+                for category_data in result['data']['relationships']['categories']['items']:
+                    industries.append(category_data['name'])
+            company_info['industries_json'] = json.dumps(industries)
+            # offices
+            offices = []
+            if 'offices' in result['data']['relationships']:
+                for office_data in result['data']['relationships']['offices']['items']:
+                    offices.append({
+                        'city': office_data['city'],
+                        'region': office_data['region'],
+                        'country': office_data['country_code']
+                    })
+            company_info['offices_json'] = json.dumps(offices)
+            # funding rounds
+            funding_rounds = []
+            if 'funding_rounds' in result['data']['relationships']:
+                for funding_round_info in result['data']['relationships']['funding_rounds']['items']:
+                    funding_round_data = json.loads(crunchbase.get(funding_round_info['path']))
+                    funding_rounds.append({
+                        ''
+                    })
+            company_info['funding_rounds_json'] = json.dumps(funding_rounds)
         except:
             company_info = None
         return company_info

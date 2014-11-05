@@ -24,6 +24,9 @@ def populate_company_with_crunchbase_data(company, company_data):
     company.last_crunchbase_update = datetime.now()
     print 'DONE! ' + str(company.name) + ' at ' + str(company.last_crunchbase_update)
 
+# we cannot directly return a Company object from the task
+# b/c it doesn't serialize well with Celery and it comes out as shit
+# on the other end
 @celery.task()
 def fetch_company_from_crunchbase(company):
     print '   Task! scrape company from crunchbase ' + str(company.name.encode('utf8'))

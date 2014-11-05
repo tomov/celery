@@ -10,7 +10,7 @@ from app import celery
 from models import db
 from scrapers.company_scrapers import * 
 
-EXPIRATION_DAYS = 7
+EXPIRATION_DAYS = 30
 
 class SqlAlchemyTask(celery.Task):
     """An abstract Celery Task that ensures that the connection the the

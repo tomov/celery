@@ -3,7 +3,7 @@ from flask import request
 
 from app import app
 from tasks import fetch_and_populate_company
-from models import db
+from models import db, Company
 from models import create_db
 
 @app.route('/')
@@ -32,3 +32,10 @@ def scrape_companies():
         fetch_and_populate_company.delay(name, linkedin_id, callback_url)
     print '  finished scraping ' + str(len(companies_data)) + ' companies'
     return 'Yolobro' # TODO return meaningful response
+
+@app.route('/get_company/<name>')
+def get_company(name):
+    company = Company.query.filter(Company.name.like('%' + name + '%')).one()
+    if company:
+        return company.crunchbase_data
+    return 'No such company found...'
