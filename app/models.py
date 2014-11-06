@@ -34,7 +34,7 @@ class Company(db.Model):
     offices_json = db.Column(db.Text)
     total_funding = db.Column(db.BigInteger)
     latest_funding_series = db.Column(db.String(length = 50))
-    latest_funding_amount = db.Column(db.BigInteger)
+    latest_funding_amount = db.Column(db.BigInteger) 
     valuation = db.Column(db.Integer)
     funding_rounds_json = db.Column(db.Text)
     team_json = db.Column(db.Text)
@@ -63,6 +63,12 @@ class Company(db.Model):
     def __init__(self, name, linkedin_id):
         self.linkedin_id = linkedin_id
         self.name = name 
+
+    def update(self, field, value):
+        if value is not None:
+            setattr(self, field, value)
+            return True
+        return False
 
     def __repr__(self):
         return '<Company %r %r>' % (self.linkedin_id, self.name)

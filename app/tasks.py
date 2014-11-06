@@ -51,7 +51,7 @@ def fetch_and_populate_company(name, linkedin_id, callback_url=None):
         if crunchbase_result:
             print '     waiting for crunchbase result'
             company_data = crunchbase_result.wait()
-            populate_company_with_crunchbase_data(company, company_data)
+            update_company_with_crunchbase_data(company, company_data)
         if not company_exists:
             db.session.add(company)
         db.session.commit()

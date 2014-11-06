@@ -78,27 +78,26 @@ class CrunchBaseAPI:
                 industries = []
                 if 'categories' in result['data']['relationships']:
                     for category_data in result['data']['relationships']['categories']['items']:
-                        industries.append(category_data['name'])
+                        industries.append(category_data.get('name'))
                 company_info['industries_json'] = json.dumps(industries)
                 # offices
                 offices = []
                 if 'offices' in result['data']['relationships']:
                     for office_data in result['data']['relationships']['offices']['items']:
                         offices.append({
-                            'city': office_data['city'],
-                            'region': office_data['region'],
-                            'country': office_data['country_code']
+                            'city': office_data.get('city'),
+                            'region': office_data.get('region'),
+                            'country': office_data.get('country_code')
                         })
                 company_info['offices_json'] = json.dumps(offices)
                 # funding rounds
                 funding_rounds = []
+                company_info['latest_funding_amount'] = None
+                company_info['latest_funding_series'] = None
+                company_info['valuation'] = None
                 if 'funding_rounds' in result['data']['relationships']:
                     for funding_round_info in result['data']['relationships']['funding_rounds']['items']:
                         funding_round_data = json.loads(crunchbase.get(funding_round_info['path']))
-                        company_info['latest_funding_amount'] = None
-                        company_info['latest_funding_series'] = None
-                        company_info['valuation'] = None
-                        latest_funding_announced_on = None
                         if 'data' in funding_round_data and 'properties' in funding_round_data['data']:
                             funding_round = {
                                 'series':  funding_round_data['data']['properties'].get('series'),
@@ -110,11 +109,14 @@ class CrunchBaseAPI:
                                 'announced_on_year': funding_round_data['data']['properties'].get('announced_on_year'),
                                 'announced_on': funding_round_data['data']['properties'].get('announced_on')
                             }
-                            if funding_round['announced_on'] and (funding_round['announced_on'] > latest_funding_announced_on or latest_funding_announced_on is None):
-                                latest_funding_announced_on = funding_round['announced_on']
-                                company_info['latest_funding_amount'] = funding_round['money_raised_usd']
-                                company_info['latest_funding_series'] = funding_round['series']
+                            if funding_round['series']:
+                                funding_round['series'] = funding_round['series'].upper()
+                            if funding_round['post_money_valuation'] and (funding_round['post_money_valuation'] > company_info['valuation'] or company_info['valuation'] is None):
                                 company_info['valuation'] = funding_round['post_money_valuation']
+                            if funding_round['money_raised_usd'] and (funding_round['money_raised_usd'] > company_info['latest_funding_amount'] or company_info['latest_funding_amount'] is None):
+                                company_info['latest_funding_amount'] = funding_round['money_raised_usd']
+                            if funding_round['series'] and (funding_round['series'] > company_info['latest_funding_series'] or company_info['latest_funding_series'] is None):
+                                company_info['latest_funding_series'] = funding_round['series']
                         else:
                             funding_round = dict()
                         investments = []
@@ -146,7 +148,7 @@ class CrunchBaseAPI:
                         }
                         team_member_data = json.loads(crunchbase.get(team_member_info['path']))
                         if 'data' in team_member_data and 'properties' in team_member_data['data']:
-                            team_member['bio'] = team_member_data.get('bio')
+                            team_member['bio'] = team_member_data['data']['properties'].get('bio')
                         if 'data' in team_member_data and 'relationships' in team_member_data['data']:
                             if 'primary_image' in team_member_data['data']['relationships'] and len(team_member_data['data']['relationships']['primary_image']['items']) > 0:
                                 team_member['photo_url'] = image_prefix + team_member_data['data']['relationships']['primary_image']['items'][0]['path']
@@ -182,10 +184,11 @@ class CrunchBaseAPI:
                   # 2) you use .get() and will not fail if stuff is missing
 
             # raw crucnhbase data 
-            print 'COMPANY INFO ---> ' + str(company_info)
+            #print 'COMPANY INFO ---> ' + str(company_info)
             company_info['crunchbase_data'] = result_raw
         except:
             company_info = None
+            raise
         return company_info
 
 
