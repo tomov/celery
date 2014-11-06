@@ -186,6 +186,7 @@ class CrunchBaseAPI:
             # raw crucnhbase data 
             #print 'COMPANY INFO ---> ' + str(company_info)
             company_info['crunchbase_data'] = result_raw
+            print 'done with ' + str(name)
         except:
             company_info = None
             raise

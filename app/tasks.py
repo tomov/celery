@@ -58,15 +58,8 @@ def fetch_and_populate_company(name, linkedin_id, callback_url=None):
 
     print 'callback url = ' + str(callback_url)
     if callback_url:
-        company_data = {
-                'name': company.name,
-                'remote_id': company.id,
-                'crunchbase_url': company.crunchbase_url,
-                'logo_url': company.logo_url,
-                'headquarters': company.headquarters,
-                'description': company.description,
-                'summary': company.summary
-        }
+        company_data = company.serialize_fields(supported_fields)
+        company_data['remote_id'] = company.id
         print '  sending to callback url ' + str(callback_url)
         data = urllib.urlencode({'data': json.dumps(company_data)})
         req = urllib2.Request(callback_url, data)

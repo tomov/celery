@@ -70,6 +70,18 @@ class Company(db.Model):
             return True
         return False
 
+    def deserialize_fields(self, fields, company_data):
+        updated_count = 0
+        for field in fields:
+            updated_count += self.update(field, company_data.get(field))
+        return updated_count
+
+    def serialize_fields(self, fields):
+        company_data = dict()
+        for field in fields:
+            company_data[field] = getattr(self, field)
+        return company_data
+
     def __repr__(self):
         return '<Company %r %r>' % (self.linkedin_id, self.name)
 
