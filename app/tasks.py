@@ -21,6 +21,10 @@ class SqlAlchemyTask(celery.Task):
         print 'terminate DB session...'
         db.session.remove()
 
+# TODO refactor code -- move SQLAlchemyTask to queue.py
+# and move the task below to company_scrapers.py
+# just refactor the whole damn thing once it's working
+
 @celery.task(base=SqlAlchemyTask)
 def fetch_and_populate_company(name, linkedin_id, callback_url=None):
     print 'TASK! fetch company ' + str(name.encode('utf8')) + ', ' + str(linkedin_id)

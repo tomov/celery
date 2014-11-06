@@ -9,6 +9,7 @@ from sqlalchemy import UniqueConstraint
 import os
 import json
 
+
 DATABASE_USER = os.environ['DATABASE_USER']
 DATABASE_PASS = os.environ['DATABASE_PASS']
 DATABASE_HOST = os.environ['DATABASE_HOST']
@@ -29,7 +30,7 @@ class Company(db.Model):
     name = db.Column(db.String(length = 50), index = True)
     logo_url = db.Column(db.Text)
     website_url = db.Column(db.Text)
-    headquarters_json = db.Column(db.Text))
+    headquarters_json = db.Column(db.Text)
     offices_json = db.Column(db.Text)
     total_funding = db.Column(db.BigInteger)
     latest_funding_series = db.Column(db.String(length = 50))
@@ -37,6 +38,7 @@ class Company(db.Model):
     valuation = db.Column(db.Integer)
     funding_rounds_json = db.Column(db.Text)
     team_json = db.Column(db.Text)
+    team_size = db.Column(db.Integer)
     employees_min = db.Column(db.Integer)
     employees_max = db.Column(db.Integer)
     summary = db.Column(db.Text)
