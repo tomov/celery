@@ -42,14 +42,14 @@ def update_company_with_crunchbase_data(company, company_data):
     if company_data:
         updated_count += company.deserialize_fields(supported_fields, company_data)
     company.last_crunchbase_update = datetime.now()
-    print 'DONE! ' + str(company.name) + ' at ' + str(company.last_crunchbase_update) + ' ; total fields updated = ' + str(updated_count) + ' out of ' + str(len(supported_fields)) + ' fields'
+    print 'DONE! ' + company.name.encode('utf8') + ' at ' + str(company.last_crunchbase_update) + ' ; total fields updated = ' + str(updated_count) + ' out of ' + str(len(supported_fields)) + ' fields'
 
 # we cannot directly return a Company object from the task
 # b/c it doesn't serialize well with Celery and it comes out as shit
 # on the other end
 @celery.task()
 def fetch_company_from_crunchbase(company):
-    print '   Task! scrape company from crunchbase ' + str(company.name.encode('utf8'))
+    print '   Task! scrape company from crunchbase ' + company.name.encode('utf8')
     company_data = crunchbase.fetch_company_by_name(company.name)
     return company_data
 
