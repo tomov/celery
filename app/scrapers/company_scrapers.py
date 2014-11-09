@@ -37,7 +37,7 @@ supported_fields = [
 ]
 
 def update_company_with_crunchbase_data(company, company_data):
-    print '  populate company w/ crunchbase data ' + str(company.name)
+    print '  populate company w/ crunchbase data ' + str(company.name.encode('utf8'))
     updated_count = 0
     if company_data:
         updated_count += company.deserialize_fields(supported_fields, company_data)

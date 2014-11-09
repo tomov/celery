@@ -4,6 +4,7 @@ import urllib
 import urllib2
 import json
 from time import sleep
+from random import randint
 
 CRUNCHBASE_USER_KEY = os.environ['CRUNCHBASE_USER_KEY'] 
 
@@ -72,7 +73,7 @@ class CrunchBaseAPI:
                     company_info['headquarters_json'] = json.dumps({
                         'city': result['data']['relationships']['headquarters']['items'][0].get('city'),
                         'region': result['data']['relationships']['headquarters']['items'][0].get('region'),
-                        'country': result['data']['relationships']['headquarters']['items'][0].get('country_code')
+                        'country': result['data']['relationships']['headquarters']['items'][0].get('country')
                     })
                 # industries
                 industries = []
@@ -87,7 +88,7 @@ class CrunchBaseAPI:
                         offices.append({
                             'city': office_data.get('city'),
                             'region': office_data.get('region'),
-                            'country': office_data.get('country_code')
+                            'country': office_data.get('country')
                         })
                 company_info['offices_json'] = json.dumps(offices)
                 # funding rounds
