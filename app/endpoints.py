@@ -39,3 +39,10 @@ def get_company(name):
     if company:
         return company.crunchbase_data
     return 'No such company found...'
+
+@app.route('/dedupe_company/<name>')
+def dedupe_company(name):
+    companies = Company.query.filter(Company.name.ilike(name)).all()
+    for company in companies:
+        print 'Found %s, id = %s' % (company.name.encode('utf8'), company.linkedin_id)
+    return 'Bla'

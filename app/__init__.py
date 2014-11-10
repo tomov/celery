@@ -4,6 +4,7 @@ from flask import Flask
 from queue import make_celery
 from models import db
 from models import DATABASE_URI
+from api_helpers.linkedin import linkedin_bp
 
 app = Flask(__name__)
 
@@ -17,6 +18,9 @@ app.config.update(
     },
 )
 celery = make_celery(app)
+
+# blueprints
+app.register_blueprint(linkedin_bp)
 
 # database
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
