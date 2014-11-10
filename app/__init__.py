@@ -5,6 +5,8 @@ from queue import make_celery
 from models import db
 from models import DATABASE_URI
 from api_helpers.linkedin import linkedin_bp
+from api_helpers.glassdoor import glassdoor_bp
+from api_helpers.angellist import angellist_bp 
 
 app = Flask(__name__)
 
@@ -21,6 +23,8 @@ celery = make_celery(app)
 
 # blueprints
 app.register_blueprint(linkedin_bp)
+app.register_blueprint(glassdoor_bp)
+app.register_blueprint(angellist_bp)
 
 # database
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI

@@ -46,3 +46,4 @@ def dedupe_company(name):
     for company in companies:
         print 'Found %s, id = %s' % (company.name.encode('utf8'), company.linkedin_id)
     return 'Bla'
+

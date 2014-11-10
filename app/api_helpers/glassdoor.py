@@ -1,9 +1,11 @@
 import os
 import urllib2
-from flask import Flask, redirect, url_for, session
+from flask import Flask, redirect, url_for, session, Blueprint
 
 GLASSDOOR_PARTNER_ID = os.environ['GLASSDOOR_PARTNER_ID']
 GLASSDOOR_PARTNER_KEY = os.environ['GLASSDOOR_PARTNER_KEY']
+
+glassdoor_bp  = Blueprint('glassdoor_bp', __name__)
 
 class GlassdoorAPI:
     url_template = 'http://api.glassdoor.com/api/api.htm?v=1&format=json&t.p={0}&t.k={1}&action={2}{3}&userip=0.0.0.0&useragent='
@@ -25,12 +27,8 @@ app.secret_key = 'development'
 
 glassdoor = GlassdoorAPI(GLASSDOOR_PARTNER_ID, GLASSDOOR_PARTNER_KEY)
 
-@app.route('/')
-def index():
-    me = glassdoor.get('employers', {'q': 'Facebook'})
+@glassdoor_bp.route('/glassdoor_company/<name>')
+def glassdoor_company(name):
+    me = glassdoor.get('employers', {'q': name})
     return str(me)
-
-
-if __name__ == '__main__':
-    app.run()
 

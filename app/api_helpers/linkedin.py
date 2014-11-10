@@ -2,7 +2,6 @@ from flask_oauthlib.client import OAuth
 from flask import url_for, Blueprint, session, redirect, request, render_template
 import os
 
-
 LINKEDIN_API_KEY = os.environ['LINKEDIN_API_KEY']
 LINKEDIN_SECRET_KEY = os.environ['LINKEDIN_SECRET_KEY']
 
@@ -15,7 +14,6 @@ oauth = OAuth(linkedin_bp)
 
 USER_PROFILE_FIELDS = "(id,first-name,last-name,headline,site-standard-profile-request,picture_url,positions)"
 
-print 'FUCKING haNDshaKE'
 linkedin = oauth.remote_app(
     'linkedin',
     consumer_key=LINKEDIN_API_KEY,
@@ -30,7 +28,6 @@ linkedin = oauth.remote_app(
     access_token_url='https://www.linkedin.com/uas/oauth2/accessToken',
     authorize_url='https://www.linkedin.com/uas/oauth2/authorization',
 )
-print 'done with handshake...'
 
 @linkedin.tokengetter
 def get_linkedin_oauth_token():

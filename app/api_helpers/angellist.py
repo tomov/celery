@@ -1,6 +1,8 @@
 import os
-from flask import Flask, redirect, url_for, session, request
+from flask import Flask, render_template, redirect, url_for, session, request, Blueprint
 from flask_oauthlib.client import OAuth, OAuthException
+import json
+import urllib
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' # this is a hack to make it work without SSL
 # don't know how the other api's work without that...
@@ -8,11 +10,8 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' # this is a hack to make it work
 ANGELLIST_APP_ID = os.environ['ANGELLIST_APP_ID']
 ANGELLIST_APP_SECRET = os.environ['ANGELLIST_APP_SECRET'] 
 
-
-app = Flask(__name__)
-app.debug = True
-app.secret_key = 'development'
-oauth = OAuth(app)
+angellist_bp  = Blueprint('angellist_bp', __name__)
+oauth = OAuth(angellist_bp)
 
 angellist = oauth.remote_app(
     'angellist',
@@ -30,18 +29,21 @@ angellist = oauth.remote_app(
 )
 
 
-@app.route('/')
-def index():
-    return redirect(url_for('login'))
+@angellist_bp.route('/angellist_home')
+def angellist_home():
+    return render_template('angellist_home.html', token=session.get('angellist_token'))
 
-
-@app.route('/login')
-def login():
-    callback = url_for('angellist_authorized', _external=True)
+@angellist_bp.route('/angellist_login')
+def angellist_login():
+    callback = url_for('angellist_bp.angellist_authorized', _external=True)
     return angellist.authorize(callback=callback)
 
+@angellist_bp.route('/angellist_logout')
+def angellist_logout():
+    session.pop('angellist_token', None)
+    return redirect(url_for('angellist_bp.angellist_home'))
 
-@app.route('/login/authorized')
+@angellist_bp.route('/angellist_authorized')
 def angellist_authorized():
     resp = angellist.authorized_response()
     if resp is None:
@@ -52,16 +54,21 @@ def angellist_authorized():
     if isinstance(resp, OAuthException):
         return 'Access denied: %s' % resp.message
 
-    session['oauth_token'] = (resp['access_token'], '')
-    me = angellist.get('startups/6702')
-    return jsonify(me.data)
+    session['angellist_token'] = (resp['access_token'], '')
+    return redirect(url_for('angellist_bp.angellist_home'))
 
+@angellist_bp.route('/angellist_search/<name>')
+def angellist_search(name):
+    name = urllib.quote_plus(name.encode('utf-8'))
+    result = angellist.get('search?query=' + name + '&type=Startup')
+    return json.dumps(result.data)
+
+@angellist_bp.route('/angellist_startup_with_id/<id>')
+def angellist_startup_with_id(id):
+    result = angellist.get('startups/' + str(id))
+    return json.dumps(result.data)
 
 @angellist.tokengetter
 def get_angellist_oauth_token():
-    return session.get('oauth_token')
-
-
-if __name__ == '__main__':
-    app.run()
+    return session.get('angellist_token')
 
