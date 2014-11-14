@@ -68,6 +68,34 @@ def angellist_startup_with_id(id):
     result = angellist.get('startups/' + str(id))
     return json.dumps(result.data)
 
+
+"""
+startup fields to scrape
+
+ "name"  "AngelList",
+"angellist_url": "http://localhost:3000/angellist",
+quality": 10,
+video_url: "http://vimeo.com/64439316", <--- !!!!!!
+ product_desc": "AngelList is a platform for startups to meet investors and talent.",
+  "high_concept": "A platform for startups",
+ "logo_url": "https://s3.amazonaws.com/photos.angel.co/startups/i/6702-766d1...",
+  "thumb_url": "https://s3.amazonaws.com/photos.angel.co/startups/i/6702-766d1...",
+facebook_url: "http://www.facebook.com/memsql",
+twitter_url
+linkedin_url: "http://www.linkedin.com/company/2220441",
+blog_url: "http://developers.memsql.com/memsql"
+  "company_url": "http://angel.co",
+company_size = "5000+"; "11-50"
+
+company_type --> name == 'public' -> not a startup
+locations --> look into it
+"""
+
+@angellist_bp.route('/angellist_startup_jobs/<id>')
+def angellist_startup_jobs(id):
+    result = angellist.get('startups/' + str(id) + '/jobs')
+    return json.dumps(result.data)
+
 @angellist.tokengetter
 def get_angellist_oauth_token():
     return session.get('angellist_token')

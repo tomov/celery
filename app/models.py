@@ -89,5 +89,9 @@ class Company(db.Model):
     def from_linkedin_id(linkedin_id):
         return Company.query.filter_by(linkedin_id=str(linkedin_id)).first()
 
+    @staticmethod
+    def from_name(name):
+        return Company.query.filter(Company.name.ilike(name)).first()
+
 def create_db():
     db.create_all()

@@ -2,8 +2,8 @@ import json
 from flask import request
 
 from app import app
-from tasks import fetch_and_populate_company
-from models import db, Company
+from scrapers.company_scrapers import fetch_and_populate_company
+from models import Company
 from models import create_db
 
 @app.route('/')
