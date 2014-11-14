@@ -55,7 +55,7 @@ class CrunchBaseAPI:
                 try:
                     print '                                     waiting for ' + str(wait_secs) + ' sconds..'
                     sleep(wait_secs)
-                    result = urllib2.urlopen(url).read()
+                    result = urllib2.urlopen(url.encode('utf8')).read()
                     if not result:
                         wait_secs *= 2
                         print '                     NO RESULT; waiting ' + str(wait_secs) + ' seconds and trying again...'
