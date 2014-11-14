@@ -21,7 +21,7 @@ CRUNCHBASE_USER_KEYS = [
 ]
 
 class CrunchBaseAPI:
-    url_template = 'http://api.crunchbase.com/v/2/{0}?user_key={1}{2}'
+    url_template = u'http://api.crunchbase.com/v/2/{0}?user_key={1}{2}'
     orders = [
         'created_at+DESC',
         'created_at+ASC',
@@ -36,7 +36,7 @@ class CrunchBaseAPI:
         self.user_key = CRUNCHBASE_USER_KEYS[self.user_key_idx]
 
     def __init__(self):
-        self.user_key_idx = 0 
+        self.user_key_idx = 0
         self.user_key = CRUNCHBASE_USER_KEYS[self.user_key_idx]
 
     def get(self, operation, params=dict()):
@@ -56,13 +56,20 @@ class CrunchBaseAPI:
                     print '                                     waiting for ' + str(wait_secs) + ' sconds..'
                     sleep(wait_secs)
                     result = urllib2.urlopen(url).read()
+                    if not result:
+                        wait_secs *= 2
+                        print '                     NO RESULT; waiting ' + str(wait_secs) + ' seconds and trying again...'
                 except:
                     wait_secs *= 2
                     print '                    FAILED; waiting ' + str(wait_secs) + ' seconds and trying again...'
-            # we failed with the current key, move on to a different one
+
+            # if we failed with the current key, move on to a different one
             if not result:
                 self._next_key()
                 print '   .... this FUCKING user_key won\'t work; moving on to next one: ' + str(self.user_key_idx) + ' -> ' + str(self.user_key)
+            # if we succeeded, exit the for loop and return result
+            else:
+                break
 
         if not result:
             print 'FUUUUUUUUUUUUCK.... couldn\'t get it working after trying each key 3 times... returning None.... #fail #SHIT #fuckcrunchbase'
