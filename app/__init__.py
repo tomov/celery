@@ -15,8 +15,8 @@ app.config.update(
     CELERY_BROKER_URL='amqp://localhost//',
     CELERY_RESULT_BACKEND='amqp://localhost//',
     CELERY_ROUTES = {
-        'app.scrapers.company_scrapers.fetch_and_populate_company': {'queue': 'company'},
-        'app.scrapers.company_scrapers.fetch_company_from_crunchbase' : {'queue': 'crunchbase'}
+        'app.scrapers.company.fetch_and_populate_company': {'queue': 'company'},
+        'app.scrapers.company.fetch_company_info_from_crunchbase' : {'queue': 'crunchbase'}
     },
 )
 celery = make_celery(app)

@@ -44,9 +44,11 @@ class Company(db.Model):
     summary = db.Column(db.Text(collation='utf8_general_ci'))
     description = db.Column(db.Text(collation='utf8_general_ci'))
     industries_json = db.Column(db.Text(collation='utf8_general_ci'))
+    articles_json = db.Column(db.Text(collation='utf8_general_ci'))
     rating_glassdoor = db.Column(db.Float(precision = 32))
     glassdoor_url = db.Column(db.Text)
     crunchbase_url = db.Column(db.Text)
+    crunchbase_path = db.Column(db.Text)
     angellist_url = db.Column(db.Text)
     linkedin_url = db.Column(db.Text)
     twitter_url = db.Column(db.Text)
@@ -70,17 +72,17 @@ class Company(db.Model):
             return True
         return False
 
-    def deserialize_fields(self, fields, company_data):
+    def deserialize_fields(self, fields, company_info):
         updated_count = 0
         for field in fields:
-            updated_count += self.update(field, company_data.get(field))
+            updated_count += self.update(field, company_info.get(field))
         return updated_count
 
     def serialize_fields(self, fields):
-        company_data = dict()
+        company_info = dict()
         for field in fields:
-            company_data[field] = getattr(self, field)
-        return company_data
+            company_info[field] = getattr(self, field)
+        return company_info
 
     def __repr__(self):
         return '<Company %r %r>' % (self.linkedin_id, self.name)
