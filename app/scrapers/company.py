@@ -108,6 +108,16 @@ def fetch_company_info_from_crunchbase(company):
     company_info = fetch_company_info_by_crunchbase_path(crunchbase_path)
     return company_info
 
+def serialize_and_send_company_to_callback_url(company, callback_url):
+    company_info = company.serialize_fields(SUPPORTED_FIELDS)
+    company_info['remote_id'] = company.id
+    print '  sending to callback url ' + str(callback_url)
+    data = urllib.urlencode({'data': json.dumps(company_info)})
+    req = urllib2.Request(callback_url, data)
+    resp = urllib2.urlopen(req)
+    resp_html = resp.read()
+    print '  response to callback: ' + str(resp_html)
+
 # Given a company name and linkedin id,
 # 1) check if it exists in the db, first by linkedin id then by name
 # 2) if it doesn't exist or exists but hasn't been updated in a while,
@@ -157,13 +167,37 @@ def fetch_and_populate_company(name, linkedin_id, callback_url=None):
     # 3) send back company to the mother ship
     print 'callback url = ' + str(callback_url)
     if callback_url:
-        company_info = company.serialize_fields(SUPPORTED_FIELDS)
-        company_info['remote_id'] = company.id
-        print '  sending to callback url ' + str(callback_url)
-        data = urllib.urlencode({'data': json.dumps(company_info)})
-        req = urllib2.Request(callback_url, data)
-        resp = urllib2.urlopen(req)
-        resp_html = resp.read()
-        print '  response to callback: ' + str(resp_html)
+        serialize_and_send_company_to_callback_url(company, callback_url)
     return 'Done?' # TODO return meaningful result 
 
+# rescrape fields using locally stored data
+# i.e. don't fetch from crunchbase -- it's expensive
+# note that only some fields are refreshed -- the team and funding rounds are not
+@celery.task(base=SqlAlchemyTask)
+def soft_repopulate_company(company_id, callback_url=None):
+    company = Company.query.get(company_id)
+    if not company:
+        # TODO better response
+        return 'Sorry coundn\'t find company by id ' + str(company_id)
+    print 'SOFT! repopulate ' + company.name.encode('utf8') + ', ' + str(company.id)
+
+    # reparse it
+    result_raw = company.crunchbase_data
+    result = json.loads(result_raw)
+    company_info = dict()
+    fill_company_basics_from_crunchbase_data(company_info, result)
+    fill_company_logo_from_crunchbase_data(company_info, result)
+    fill_company_industries_from_crunchbase_data(company_info, result)
+    fill_company_offices_from_crunchbase_data(company_info, result)
+    fill_company_websites_from_crunchbase_data(company_info, result)
+    fill_company_articles_from_crunchbase_data(company_info, result)
+
+    # store it
+    update_company_with_crunchbase_info(company, company_info)
+    db.session.commit()
+  
+    # send it back
+    print 'callback url = ' + str(callback_url)
+    if callback_url:
+        serialize_and_send_company_to_callback_url(company, callback_url)
+    return 'Done?' # TODO return meaningful result 

@@ -2,7 +2,8 @@ import json
 from flask import request
 
 from app import app
-from scrapers.company import fetch_and_populate_company
+from scrapers.company import fetch_and_populate_company, \
+        soft_repopulate_company
 from models import Company
 from models import create_db
 
@@ -20,6 +21,10 @@ def scrape_company(name, linkedin_id):
     result = fetch_and_populate_company.delay(name, linkedin_id)
     return 'Fetching company {0}, {1}...'.format(name, linkedin_id)
 
+# fetch them from crunchbase by name, if they don't exist
+# if they do, rescrape them if haven't been rescraped recently
+# store the newly rescraped data in company in db
+# and return serialized company from db, regardless if we rescraped or no
 @app.route('/scrape_companies', methods = ['POST'])
 def scrape_companies():
     companies_info = json.loads(request.values.get('data'))
@@ -29,7 +34,13 @@ def scrape_companies():
         linkedin_id = company_info['linkedin_id']
         callback_url = company_info['callback_url']
         print 'Fetching company {0}, {1}...'.format(name.encode('utf8'), linkedin_id)
-        fetch_and_populate_company.delay(name, linkedin_id, callback_url)
+        soft = company_info.get('soft')
+        if soft:
+            company_id = company_info['remote_id']
+            print '           SOFT = ' + str(company_id)
+            soft_repopulate_company.delay(company_id, callback_url)
+        else:
+            fetch_and_populate_company.delay(name, linkedin_id, callback_url)
     print '  finished scraping ' + str(len(companies_info)) + ' companies'
     return 'Yolobro' # TODO return meaningful response
 

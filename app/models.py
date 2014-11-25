@@ -66,6 +66,8 @@ class Company(db.Model):
         self.linkedin_id = linkedin_id
         self.name = name 
 
+    # NOTE this is crucial! we do not update the value if it is NULL
+    # this is b/ we often will only update a subset of the fields
     def update(self, field, value):
         if value is not None:
             setattr(self, field, value)
