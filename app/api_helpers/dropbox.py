@@ -1,5 +1,7 @@
 import os
-from flask import redirect, url_for, session, request, jsonify, Blueprint, render_template
+import json
+import requests
+from flask import redirect, url_for, session, request, Blueprint, render_template
 from flask_oauthlib.client import OAuth
 
 DROPBOX_APP_ID = os.environ['DROPBOX_APP_ID']
@@ -36,18 +38,23 @@ def dropbox_bogus_post(path):
 
 @dropbox_bp.route('/dropbox_bogus_share')
 def dropbox_bogus_share():
-    res = dropbox_bogus_post('shares/auto/Gulag1.pdf')
+    res = dropbox_bogus_post('shares/auto/test.jpg')
     if type(res.data) is dict:
-        data = jsonify(res.data)
+        data = json.dumps(res.data)
     else:
         data = res.data
-    return data
+    r = requests.get(res.data['url'])
+    print r.url
+    img_url = r.url.split('?')[0]
+    img_url += '?raw=1'
+    print img_url
+    return render_template('dropbox_bogus.html', img_url=img_url, data=data)
 
 @dropbox_bp.route('/dropbox_bogus')
 def dropbox_bogus():
     res = dropbox_bogus_get('metadata/auto')
     if type(res.data) is dict:
-        data = jsonify(res.data)
+        data = json.dumps(res.data)
     else:
         data = res.data
     return data
@@ -57,7 +64,7 @@ def dropbox_home():
     data = []
     if 'dropbox_token' in session:
         me = dropbox.get('account/info')
-        data = jsonify(me.data)
+        data = json.dumps(me.data)
     return render_template('dropbox_home.html', token=session.get('dropbox_token'), data=data)
 
 @dropbox_bp.route('/dropbox_login')
@@ -79,7 +86,7 @@ def dropbox_authorized():
         )
     session['dropbox_token'] = (resp['access_token'], '')
     me = dropbox.get('account/info')
-    return jsonify(me.data)
+    return json.dumps(me.data)
 
 @dropbox.tokengetter
 def get_dropbox_oauth_token():
