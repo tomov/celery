@@ -43,7 +43,7 @@ def fetch_store_and_link_user_image(picture_url, user_id, linkedin_id, name, cal
         print 'User photo already uploaded.'
     else:
         # TODO test with unicodes
-        filename = str(id) + '-' + name + '-' + linkedin_id + '-profpic'
+        filename = str(user_id) + '-' + name + '-' + linkedin_id + '-profpic'
         user.local_picture_url = wget_to_dropbox(picture_url, filename)
         db.session.commit()
         print 'Uploaded to ' + user.local_picture_url.encode('utf8')
