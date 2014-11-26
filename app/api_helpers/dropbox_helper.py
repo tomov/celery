@@ -1,9 +1,9 @@
 import os
-import dropbox as Dropbox
+import dropbox
+import urllib
 import json
 import requests
-from flask import redirect, url_for, session, request, Blueprint, render_template
-from flask_oauthlib.client import OAuth
+from flask import Blueprint, render_template
 
 DROPBOX_APP_ID = os.environ['DROPBOX_APP_ID']
 DROPBOX_APP_SECRET = os.environ['DROPBOX_APP_SECRET']
@@ -12,95 +12,54 @@ DROPBOX_APP_SECRET = os.environ['DROPBOX_APP_SECRET']
 # so for now, just manually generating the oauth token from the dropbox dev website
 DROPBOX_OAUTH_TOKEN = os.environ['DROPBOX_OAUTH_TOKEN']
 
+LOCAL_TEMP_DIRECTORY = './temp' # where to save the files locally -- this is w/ respect to run.py
+DROPBOX_UPLOAD_DIRECTORY = '/' # where to put files in dropbox -- this is w/ respect to startuplinx directory
+
 dropbox_bp = Blueprint('dropbox_bp', __name__)
-oauth = OAuth(dropbox_bp)
 
-dropbox = oauth.remote_app(
-    'dropbox',
-    consumer_key=DROPBOX_APP_ID,
-    consumer_secret=DROPBOX_APP_SECRET,
-    request_token_params={},
-    base_url='https://www.dropbox.com/1/',
-    request_token_url=None,
-    access_token_method='POST',
-    access_token_url='https://api.dropbox.com/1/oauth2/token',
-    authorize_url='https://www.dropbox.com/1/oauth2/authorize',
-)
+client = dropbox.client.DropboxClient(DROPBOX_OAUTH_TOKEN)
 
-def dropbox_bogus_get(path):
-    if 'dropbox_token' not in session:
-        session['dropbox_token'] = (DROPBOX_OAUTH_TOKEN, '')
-    return dropbox.get(path)
+def dropbox_share(path):
+    res = client.share(path)
+    r = requests.get(res['url'])
+    url = r.url.split('?')[0]
+    url += '?raw=1'
+    return url
 
-def dropbox_bogus_post(path):
-    if 'dropbox_token' not in session:
-        session['dropbox_token'] = (DROPBOX_OAUTH_TOKEN, '')
-    return dropbox.post(path)
+def dropbox_upload(local_path, dropbox_path):
+    f = open(local_path, 'rb')
+    res = client.put_file(dropbox_path, f)
+    f.close()
+    path = res['path']
+    return path
 
-client = Dropbox.client.DropboxClient(DROPBOX_OAUTH_TOKEN)
+def wget_to_dropbox(url, filename):
+    opener = urllib.URLopener()
+    local_path = os.path.join(LOCAL_TEMP_DIRECTORY, filename)
+    opener.retrieve(url, local_path)
+    try:
+        dropbox_path = os.path.join(DROPBOX_UPLOAD_DIRECTORY, filename)
+        dropbox_path = dropbox_upload(local_path, dropbox_path)
+        dropbox_url = dropbox_share(dropbox_path)
+    except:
+        raise
+    finally:
+        os.remove(local_path)
+    return dropbox_url
+
+@dropbox_bp.route('/dropbox_bogus_wget')
+def dropbox_bogus_wget():
+    url = wget_to_dropbox('http://www.memsql.com/static/images/customers/zynga.png', 'w000t-zynga')
+    return render_template('dropbox_bogus.html', img_url=url, data="bla")
 
 @dropbox_bp.route('/dropbox_bogus_upload')
 def dropbox_bogus_upload():
-    f = open('temp/2000px-Smiley.svg.png', 'rb')
-    res = client.put_file('/test_smiley.png', f)
-    f.close()
-    path = res['path']
-    print res
-    return json.dumps(res)
+    path = dropbox_upload('temp/2000px-Smiley.svg.png', '/test_bla.png')
+    url = dropbox_share(path)
+    return render_template('dropbox_bogus.html', img_url=url, data="bla")
 
 @dropbox_bp.route('/dropbox_bogus_share')
 def dropbox_bogus_share():
-    res = dropbox_bogus_post('shares/auto/test.jpg')
-    if type(res.data) is dict:
-        data = json.dumps(res.data)
-    else:
-        data = res.data
-    r = requests.get(res.data['url'])
-    print r.url
-    img_url = r.url.split('?')[0]
-    img_url += '?raw=1'
-    print img_url
-    return render_template('dropbox_bogus.html', img_url=img_url, data=data)
-
-@dropbox_bp.route('/dropbox_bogus')
-def dropbox_bogus():
-    res = dropbox_bogus_get('metadata/auto')
-    if type(res.data) is dict:
-        data = json.dumps(res.data)
-    else:
-        data = res.data
-    return data
-
-@dropbox_bp.route('/dropbox_home')
-def dropbox_home():
-    data = []
-    if 'dropbox_token' in session:
-        me = dropbox.get('account/info')
-        data = json.dumps(me.data)
-    return render_template('dropbox_home.html', token=session.get('dropbox_token'), data=data)
-
-@dropbox_bp.route('/dropbox_login')
-def dropbox_login():
-    return dropbox.authorize(callback=url_for('dropbox_bp.dropbox_authorized', _external=True))
-
-@dropbox_bp.route('/dropbox_logout')
-def dropbox_logout():
-    session.pop('dropbox_token', None)
-    return redirect(url_for('dropbox_bp.dropbox_home'))
-
-@dropbox_bp.route('/dropbox_authorized')
-def dropbox_authorized():
-    resp = dropbox.authorized_response()
-    if resp is None:
-        return 'Access denied: reason=%s error=%s' % (
-            request.args['error'],
-            request.args['error_description']
-        )
-    session['dropbox_token'] = (resp['access_token'], '')
-    me = dropbox.get('account/info')
-    return json.dumps(me.data)
-
-@dropbox.tokengetter
-def get_dropbox_oauth_token():
-    return session.get('dropbox_token')
+    url = dropbox_share('/test_smiley.png')
+    return render_template('dropbox_bogus.html', img_url=url, data="bla")
 
