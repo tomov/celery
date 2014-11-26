@@ -97,5 +97,34 @@ class Company(db.Model):
     def from_name(name):
         return Company.query.filter(Company.name.ilike(name)).first()
 
+class User(db.Model):
+    __tablename__ = 'uses'
+    id = db.Column(db.Integer, primary_key = True)
+    created = db.Column(db.DateTime, default=datetime.now)
+    modified = db.Column(db.DateTime, onupdate=datetime.now)
+    user_id_in_main_db = db.Column(db.Integer, unique = True)
+    linkedin_id = db.Column(db.String(length = 50), unique = True, index = True)
+    email = db.Column(db.Unicode(100, collation='utf8_general_ci'), unique = True)
+    name = db.Column(db.Unicode(100, collation='utf8_general_ci'))
+    picture_url = db.Column(db.Text)
+    local_picture_url = db.Column(db.Text)
+
+    def __init__(self, user_id_in_main_db, linkedin_id, name, picture_url):
+        self.user_id_in_main_db = user_id_in_main_db
+        self.linkedin_id = linkedin_id
+        self.name = name
+        self.picture_url = picture_url
+
+    def __repr__(self):
+        return '<User %r %r>' % (self.linkedin_id, self.name)
+
+    @staticmethod
+    def from_linkedin_id(linkedin_id):
+        return User.query.filter_by(linkedin_id=str(linkedin_id)).first()
+
+    @staticmethod
+    def from_user_id_in_main_db(user_id_in_main_db):
+        return User.query.filter_by(user_id_in_main_db=str(user_id_in_main_db)).first()
+
 def create_db():
     db.create_all()

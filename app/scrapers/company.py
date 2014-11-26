@@ -50,6 +50,7 @@ SUPPORTED_FIELDS = [
         'crunchbase_data'
 ]
 
+# TODO move in separate module...
 class SqlAlchemyTask(celery.Task):
     """An abstract Celery Task that ensures that the connection the the
     database is closed on task completion"""
@@ -179,6 +180,9 @@ def soft_repopulate_company(company_id, callback_url=None):
     if not company:
         # TODO better response
         return 'Sorry coundn\'t find company by id ' + str(company_id)
+    if not company.crunchbase_data:
+        # TODO better response
+        return 'Sorry no crunchbase data'
     print 'SOFT! repopulate ' + company.name.encode('utf8') + ', ' + str(company.id)
 
     # reparse it

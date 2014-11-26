@@ -4,6 +4,7 @@ from flask import request
 from app import app
 from scrapers.company import fetch_and_populate_company, \
         soft_repopulate_company
+from scrapers.user import fetch_store_and_link_user_image
 from models import Company
 from models import create_db
 
@@ -43,6 +44,25 @@ def scrape_companies():
             fetch_and_populate_company.delay(name, linkedin_id, callback_url)
     print '  finished scraping ' + str(len(companies_info)) + ' companies'
     return 'Yolobro' # TODO return meaningful response
+
+# fetch them from crunchbase by name, if they don't exist
+# if they do, rescrape them if haven't been rescraped recently
+# store the newly rescraped data in company in db
+# and return serialized company from db, regardless if we rescraped or no
+@app.route('/scrape_user_images', methods = ['POST'])
+def scrape_user_images():
+    users_info = json.loads(request.values.get('data'))
+    print 'received request to scrape ' + str(len(users_info)) + ' user images'
+    for user_info in users_info:
+        name = user_info['name']
+        user_id = user_info['user_id']
+        picture_url = user_info['picture_url']
+        linkedin_id = user_info['linkedin_id']
+        callback_url = user_info['callback_url']
+        print 'Fetching user image {0}, {1}...'.format(name.encode('utf8'), picture_url)
+        fetch_store_and_link_user_image.delay(picture_url, user_id, name, linkedin_id, callback_url)
+    print '  finished scraping ' + str(len(users_info)) + ' users'
+    return 'Yolo13RO' # TODO return meaningful response
 
 @app.route('/get_company/<name>')
 def get_company(name):
