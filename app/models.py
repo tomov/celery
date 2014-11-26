@@ -98,7 +98,7 @@ class Company(db.Model):
         return Company.query.filter(Company.name.ilike(name)).first()
 
 class User(db.Model):
-    __tablename__ = 'uses'
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key = True)
     created = db.Column(db.DateTime, default=datetime.now)
     modified = db.Column(db.DateTime, onupdate=datetime.now)

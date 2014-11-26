@@ -5,6 +5,10 @@ from flask_oauthlib.client import OAuth
 DROPBOX_APP_ID = os.environ['DROPBOX_APP_ID']
 DROPBOX_APP_SECRET = os.environ['DROPBOX_APP_SECRET']
 
+# fucking dropbox API requires SSL for real authentication
+# so for now, just manually generating the oauth token from the dropbox dev website
+DROPBOX_OAUTH_TOKEN = os.environ['DROPBOX_OAUTH_TOKEN']
+
 dropbox_bp = Blueprint('dropbox_bp', __name__)
 oauth = OAuth(dropbox_bp)
 
@@ -19,6 +23,34 @@ dropbox = oauth.remote_app(
     access_token_url='https://api.dropbox.com/1/oauth2/token',
     authorize_url='https://www.dropbox.com/1/oauth2/authorize',
 )
+
+def dropbox_bogus_get(path):
+    if 'dropbox_token' not in session:
+        session['dropbox_token'] = (DROPBOX_OAUTH_TOKEN, '')
+    return dropbox.get(path)
+
+def dropbox_bogus_post(path):
+    if 'dropbox_token' not in session:
+        session['dropbox_token'] = (DROPBOX_OAUTH_TOKEN, '')
+    return dropbox.post(path)
+
+@dropbox_bp.route('/dropbox_bogus_share')
+def dropbox_bogus_share():
+    res = dropbox_bogus_post('shares/auto/Gulag1.pdf')
+    if type(res.data) is dict:
+        data = jsonify(res.data)
+    else:
+        data = res.data
+    return data
+
+@dropbox_bp.route('/dropbox_bogus')
+def dropbox_bogus():
+    res = dropbox_bogus_get('metadata/auto')
+    if type(res.data) is dict:
+        data = jsonify(res.data)
+    else:
+        data = res.data
+    return data
 
 @dropbox_bp.route('/dropbox_home')
 def dropbox_home():
