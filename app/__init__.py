@@ -7,7 +7,7 @@ from models import DATABASE_URI
 from api_helpers.linkedin import linkedin_bp
 from api_helpers.glassdoor import glassdoor_bp
 from api_helpers.angellist import angellist_bp 
-from api_helpers.dropbox import dropbox_bp 
+from api_helpers.dropbox_helper import dropbox_bp 
 
 app = Flask(__name__)
 

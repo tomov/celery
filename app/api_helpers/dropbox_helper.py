@@ -1,4 +1,5 @@
 import os
+import dropbox as Dropbox
 import json
 import requests
 from flask import redirect, url_for, session, request, Blueprint, render_template
@@ -35,6 +36,17 @@ def dropbox_bogus_post(path):
     if 'dropbox_token' not in session:
         session['dropbox_token'] = (DROPBOX_OAUTH_TOKEN, '')
     return dropbox.post(path)
+
+client = Dropbox.client.DropboxClient(DROPBOX_OAUTH_TOKEN)
+
+@dropbox_bp.route('/dropbox_bogus_upload')
+def dropbox_bogus_upload():
+    f = open('temp/2000px-Smiley.svg.png', 'rb')
+    res = client.put_file('/test_smiley.png', f)
+    f.close()
+    path = res['path']
+    print res
+    return json.dumps(res)
 
 @dropbox_bp.route('/dropbox_bogus_share')
 def dropbox_bogus_share():
