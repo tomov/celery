@@ -117,6 +117,12 @@ class User(db.Model):
 
     def __repr__(self):
         return '<User %r %r>' % (self.linkedin_id, self.name)
+    
+    def serialize_fields(self, fields):
+        user_info = dict()
+        for field in fields:
+            user_info[field] = getattr(self, field)
+        return user_info 
 
     @staticmethod
     def from_linkedin_id(linkedin_id):
