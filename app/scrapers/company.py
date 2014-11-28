@@ -167,7 +167,7 @@ def fetch_and_populate_company(name, linkedin_id, callback_url=None, crunchbase_
             print '       crunchbase not updated for ' + str(EXPIRATION_DAYS) + ' days => updating'
             company_info = fetch_company_info_from_crunchbase.delay(company)
         elif crunchbase_url and company.crunchbase_url != crunchbase_url:
-            print '       new crunchbase url ' + crunchbase_url.encode('utf8') + ' (old was ' + company.crunchbase_url.encode('utf8') + ')'
+            print '       new crunchbase url ' + crunchbase_url.encode('utf8') + ' (old was ' + str(company.crunchbase_url) + ')'
             company.crunchbase_url = crunchbase_url
             company_info = fetch_company_info_from_crunchbase.delay(company)
         else:

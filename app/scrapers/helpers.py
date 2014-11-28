@@ -90,7 +90,7 @@ def fetch_and_fill_company_funding_rounds_from_crunchbase_data(company_info, res
                     if 'investor' in investment_data:
                         investment['investor_type'] = investment_data['investor'].get('type')
                         if 'first_name' in investment_data['investor'] and 'last_name' in investment_data['investor']:
-                            investment['investor'] = str(investment_data['investor']['first_name']) + ' ' + investment_data['investor']['last_name']
+                            investment['investor'] = investment_data['investor']['first_name'] + ' ' + investment_data['investor']['last_name']
                         else:
                             investment['investor'] = investment_data['investor'].get('name')
                     investments.append(investment)
