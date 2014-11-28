@@ -50,6 +50,10 @@ SUPPORTED_FIELDS = [
         'crunchbase_data'
 ]
 
+DEFAULT_RESCRAPE_MODE = 'search'
+SOFT_RESCRAPE_MODE = 'soft'
+FROM_URL_RESCRAPE_MODE = 'from_url'
+
 # TODO move in separate module...
 class SqlAlchemyTask(celery.Task):
     """An abstract Celery Task that ensures that the connection the the
@@ -59,6 +63,11 @@ class SqlAlchemyTask(celery.Task):
     def after_return(self, status, retval, task_id, args, kwargs, einfo):
         print 'terminate DB session...'
         db.session.remove()
+
+def get_crunchbase_path_from_crunchbase_url(url):
+    parts = url.split('/')
+    path = '/'.join(parts[3:])
+    return path
 
 def fetch_crunchbase_path_by_company_name(name):
     # do a search by the name and get the first result
@@ -71,6 +80,7 @@ def fetch_crunchbase_path_by_company_name(name):
     return result['path'] 
 
 def fetch_company_info_by_crunchbase_path(crunchbase_path):
+    print '         fetch info from crunchbase path ' + crunchbase_path.encode('utf8')
     result_raw = crunchbase.get(crunchbase_path)
     result = json.loads(result_raw)
     web_prefix = result['metadata']['www_path_prefix']
@@ -86,7 +96,7 @@ def fetch_company_info_by_crunchbase_path(crunchbase_path):
     fill_company_websites_from_crunchbase_data(company_info, result)
     fill_company_articles_from_crunchbase_data(company_info, result)
     company_info['crunchbase_data'] = result_raw
-    print 'done with ' + str(crunchbase_path)
+    print 'done with ' + crunchbase_path.encode('utf8')
     return company_info
 
 def update_company_with_crunchbase_info(company, company_info):
@@ -103,8 +113,14 @@ def update_company_with_crunchbase_info(company, company_info):
 @celery.task()
 def fetch_company_info_from_crunchbase(company):
     print '   Task! scrape company from crunchbase ' + company.name.encode('utf8')
-    crunchbase_path = fetch_crunchbase_path_by_company_name(company.name)
+    if company.crunchbase_url:
+        print '            try with crunchbase url = ' + company.crunchbase_url.encode('utf8')
+        crunchbase_path = get_crunchbase_path_from_crunchbase_url(company.crunchbase_url)
+    else:
+        print '            try by name'
+        crunchbase_path = fetch_crunchbase_path_by_company_name(company.name)
     if not crunchbase_path:
+        print '            no crunchbase path found... returning None'
         return None
     company_info = fetch_company_info_by_crunchbase_path(crunchbase_path)
     return company_info
@@ -127,8 +143,11 @@ def serialize_and_send_company_to_callback_url(company, callback_url):
 #    note that this will still send back results even if nothing was fetched from crunchbase
 #     i.e. it will update from the "cache" = the MySQL db 
 #
+# note that if crunchbase_url is provided, it is assumed that we will use that, and not
+# the name, to find the company in crunchbase
+#
 @celery.task(base=SqlAlchemyTask)
-def fetch_and_populate_company(name, linkedin_id, callback_url=None):
+def fetch_and_populate_company(name, linkedin_id, callback_url=None, crunchbase_url=None):
     print 'TASK! fetch company ' + str(name.encode('utf8')) + ', ' + str(linkedin_id)
 
     # 1) Try to find company in database by linkedin id or by name
@@ -141,19 +160,23 @@ def fetch_and_populate_company(name, linkedin_id, callback_url=None):
         company = Company.from_name(name)
 
     # 2) fetch it from crunchbase if it doesn't exist or is outdated
-    company_exists = False
     company_info = None
     if company:
-        company_exists = True
         print '    ...company already exists as ' + str(company.name.encode('utf8')) + ', ' + str(company.linkedin_id)
         if not company.last_crunchbase_update or company.last_crunchbase_update < datetime.now() - timedelta(days=EXPIRATION_DAYS):
             print '       crunchbase not updated for ' + str(EXPIRATION_DAYS) + ' days => updating'
+            company_info = fetch_company_info_from_crunchbase.delay(company)
+        elif crunchbase_url and company.crunchbase_url != crunchbase_url:
+            print '       new crunchbase url ' + crunchbase_url.encode('utf8') + ' (old was ' + company.crunchbase_url.encode('utf8') + ')'
+            company.crunchbase_url = crunchbase_url
             company_info = fetch_company_info_from_crunchbase.delay(company)
         else:
             print '       crunchbase updated recently => no crunchbase update necessary'
     else:
         print '     ...' + str(name.encode('utf8')) + ', ' + str(linkedin_id) + ' does not exist => new company' 
         company = Company(name, linkedin_id)
+        company.crunchbase_url = crunchbase_url
+        db.session.add(company)
         company_info = fetch_company_info_from_crunchbase.delay(company)
 
     with allow_join_result():
@@ -161,8 +184,6 @@ def fetch_and_populate_company(name, linkedin_id, callback_url=None):
             print '     waiting for crunchbase result'
             company_info = company_info.wait()
             update_company_with_crunchbase_info(company, company_info)
-        if not company_exists:
-            db.session.add(company)
         db.session.commit()
   
     # 3) send back company to the mother ship
