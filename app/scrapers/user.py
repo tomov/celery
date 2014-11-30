@@ -30,7 +30,7 @@ def serialize_and_send_company_to_callback_url(user, callback_url):
     print '  response to callback: ' + str(resp_html)
 
 @celery.task(base=SqlAlchemyTask)
-def fetch_store_and_link_user_image(picture_url, user_id, linkedin_id, name, callback_url, reupload = False):
+def fetch_store_and_link_user_image(picture_url, user_id, name, linkedin_id, callback_url, reupload = False):
     print 'Tttaask --> download user photo ' + name.encode('utf8') + ' ' + str(user_id) + ' -> ' + picture_url
     if not picture_url:
         # TODO better response
