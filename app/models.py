@@ -87,7 +87,10 @@ class Company(db.Model):
         for field in fields:
             value = getattr(self, field)
             if type(value) is datetime or type(value) is date:
-                value = value.strftime('%Y-%m-%d')
+                try:
+                    value = value.strftime('%Y-%m-%d')
+                except:
+                    value = None
             company_info[field] = value
         return company_info
 
