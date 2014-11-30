@@ -1,5 +1,5 @@
 from flask.ext.sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, date
 from datetime import timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import backref
@@ -31,6 +31,8 @@ class Company(db.Model):
     logo_url = db.Column(db.Text)
     website_url = db.Column(db.Text)
     headquarters_json = db.Column(db.Text(collation='utf8_general_ci'))
+    founded_on = db.Column(db.Date)
+    founded_on_year = db.Column(db.Integer)
     offices_json = db.Column(db.Text(collation='utf8_general_ci'))
     total_funding = db.Column(db.BigInteger)
     latest_funding_series = db.Column(db.String(length = 50))
@@ -83,7 +85,10 @@ class Company(db.Model):
     def serialize_fields(self, fields):
         company_info = dict()
         for field in fields:
-            company_info[field] = getattr(self, field)
+            value = getattr(self, field)
+            if type(value) is datetime or type(value) is date:
+                value = value.strftime('%Y-%m-%d')
+            company_info[field] = value
         return company_info
 
     def __repr__(self):

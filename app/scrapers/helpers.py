@@ -17,6 +17,9 @@ def fill_company_basics_from_crunchbase_data(company_info, result):
         company_info['employees_max'] = result['data']['properties'].get('num_employees_max')
         # total funding
         company_info['total_funding'] = result['data']['properties'].get('total_funding_usd')
+        # founded on
+        company_info['founded_on'] = result['data']['properties'].get('founded_on')
+        company_info['founded_on_year'] = result['data']['properties'].get('founded_on_year')
 
 def fill_company_logo_from_crunchbase_data(company_info, result):
     image_prefix = result['metadata']['image_path_prefix']
@@ -24,6 +27,9 @@ def fill_company_logo_from_crunchbase_data(company_info, result):
         # logo
         if 'primary_image' in result['data']['relationships'] and len(result['data']['relationships']['primary_image']['items']) > 0:
             company_info['logo_url'] = image_prefix + result['data']['relationships']['primary_image']['items'][0]['path']
+
+def fill_company_headquarters_from_crunchbase_data(company_info, result):
+    if 'properties' in result['data']:
         # headquarters
         if 'headquarters' in result['data']['relationships'] and len(result['data']['relationships']['headquarters']['items']) > 0:
             company_info['headquarters_json'] = json.dumps({

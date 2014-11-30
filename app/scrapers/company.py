@@ -32,6 +32,8 @@ SUPPORTED_FIELDS = [
         'summary',
         'website_url',
         'headquarters_json',
+        'founded_on',
+        'founded_on_year',
         'offices_json',
         'total_funding',
         'latest_funding_series',
@@ -89,6 +91,7 @@ def fetch_company_info_by_crunchbase_path(crunchbase_path):
     company_info['crunchbase_path'] = crunchbase_path
     fill_company_basics_from_crunchbase_data(company_info, result)
     fill_company_logo_from_crunchbase_data(company_info, result)
+    fill_company_headquarters_from_crunchbase_data(company_info, result)
     fill_company_industries_from_crunchbase_data(company_info, result)
     fill_company_offices_from_crunchbase_data(company_info, result)
     fetch_and_fill_company_funding_rounds_from_crunchbase_data(company_info, result)
@@ -212,6 +215,7 @@ def soft_repopulate_company(company_id, callback_url=None):
     company_info = dict()
     fill_company_basics_from_crunchbase_data(company_info, result)
     fill_company_logo_from_crunchbase_data(company_info, result)
+    fill_company_headquarters_from_crunchbase_data(company_info, result)
     fill_company_industries_from_crunchbase_data(company_info, result)
     fill_company_offices_from_crunchbase_data(company_info, result)
     fill_company_websites_from_crunchbase_data(company_info, result)
