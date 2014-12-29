@@ -7,6 +7,10 @@ from app.api_helpers.crunchbase import crunchbase
  
 def fill_company_basics_from_crunchbase_data(company_info, result):
     if 'properties' in result['data']:
+        # name
+        # keep in mind we don't update it but only use it to
+        # ensure it's the right one with the linkedin name
+        company_info['name'] = result['data']['properties'].get('name')
         # description
         company_info['description'] = result['data']['properties'].get('description')
         # summary
@@ -20,6 +24,37 @@ def fill_company_basics_from_crunchbase_data(company_info, result):
         # founded on
         company_info['founded_on'] = result['data']['properties'].get('founded_on')
         company_info['founded_on_year'] = result['data']['properties'].get('founded_on_year')
+
+def fill_company_basics_from_linkedin_data(company_info, result):
+    # name
+    # unlike with crunchbase, here we are positive that the name is correct
+    # b/c this is where it came from in the first place in the linkedin position
+    company_info['name'] = result.get('name')
+    # description
+    company_info['description'] = result.get('description')
+    # summary
+    # ...linkedin doesn't have a short summary. Shame
+    # founded on
+    company_info['founded_on_year'] = result.get('foundedYear')
+    # website
+    company_info['website_url'] = result.get('websiteUrl')
+
+def fill_company_team_size_from_linkedin_data(company_info, result):
+    if 'employeeCountRange' in result and 'name' in result['employeeCountRange'] and 'code' in result['employeeCountRange']:
+        code = result['employeeCountRange']['code']
+        if code == 'A':
+            company_info['employees_min'] = 1
+            company_info['employees_max'] = 1
+            company_info['team_size'] = 1
+        else:
+            limits = result['employeeCountRange']['name'].split('-')
+            if len(limits) > 1:
+                company_info['employees_min'] = int(limits[0])
+                company_info['employees_max'] = int(limits[1])
+
+def fill_company_email_domains_from_linkedin_data(company_info, result):
+    if 'emailDomains' in result and 'values' in result['emailDomains'] and len(result['emailDomains']['values'] > 0):
+        company_info['email_domains_json'] = json.dumps(result['emailDomains'])
 
 def fill_company_logo_from_crunchbase_data(company_info, result):
     image_prefix = result['metadata']['image_path_prefix']
@@ -45,6 +80,13 @@ def fill_company_industries_from_crunchbase_data(company_info, result):
             industries.append(category_data.get('name'))
     company_info['industries_json'] = json.dumps(industries)
 
+def fill_company_industries_from_linkedin_data(company_info, result):
+    industries = []
+    if 'industries' in result and 'values' in result['industries'] and len(result['industries']['values'] > 0):
+        for industry_data in result['industries']['values']:
+            industries.append(industry_data.get('name'))
+    company_info['industries_json'] = json.dumps(industries)
+
 def fill_company_offices_from_crunchbase_data(company_info, result):
     offices = []
     if 'offices' in result['data']['relationships']:
@@ -54,6 +96,19 @@ def fill_company_offices_from_crunchbase_data(company_info, result):
                 'region': office_data.get('region'),
                 'country': office_data.get('country')
             })
+    company_info['offices_json'] = json.dumps(offices)
+
+def fill_company_offices_from_linkedin_data(company_info, result):
+    offices = []
+    if 'locations' in result:
+        for location_data in result['locations']:
+            if 'address' in location_data:
+                offices.append({
+                    'city': location_data['address'].get('city'),
+                    'state': location_data['address'].get('state'),
+                    'region_code': location_data['address'].get('regionCode'),
+                    'country_code': location_data['address'].get('countryCode')
+                })
     company_info['offices_json'] = json.dumps(offices)
 
 def fetch_and_fill_company_funding_rounds_from_crunchbase_data(company_info, result):

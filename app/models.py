@@ -30,6 +30,7 @@ class Company(db.Model):
     name = db.Column(db.Unicode(100, collation='utf8_general_ci'), index = True)
     logo_url = db.Column(db.Text)
     website_url = db.Column(db.Text)
+    email_domains_json = db.Column(db.Text(collation='utf8_general_ci')) 
     headquarters_json = db.Column(db.Text(collation='utf8_general_ci'))
     founded_on = db.Column(db.Date)
     founded_on_year = db.Column(db.Integer)
@@ -55,6 +56,7 @@ class Company(db.Model):
     linkedin_url = db.Column(db.Text)
     twitter_url = db.Column(db.Text)
     facebook_url = db.Column(db.Text)
+    linkedin_data = db.Column(db.Text(collation='utf8_general_ci'))
     crunchbase_data = db.Column(db.Text(collation='utf8_general_ci'))
     crunchbase_funding_rounds_data = db.Column(db.Text(collation='utf8_general_ci'))
     crunchbase_team_data = db.Column(db.Text(collation='utf8_general_ci'))
@@ -62,6 +64,7 @@ class Company(db.Model):
     glassdoor_data = db.Column(db.Text(collation='utf8_general_ci'))
     last_glassdoor_update = db.Column(db.DateTime)
     last_crunchbase_update = db.Column(db.DateTime)
+    last_linkedin_update = db.Column(db.DateTime)
     last_angellist_update = db.Column(db.DateTime)
 
     def __init__(self, name, linkedin_id):
@@ -70,8 +73,9 @@ class Company(db.Model):
 
     # NOTE this is crucial! we do not update the value if it is NULL
     # this is b/ we often will only update a subset of the fields
+    # also, linkedin sometimes has empty strings instead of NULL's
     def update(self, field, value):
-        if value is not None:
+        if value is not None and value != "":
             setattr(self, field, value)
             return True
         return False
@@ -80,6 +84,16 @@ class Company(db.Model):
         updated_count = 0
         for field in fields:
             updated_count += self.update(field, company_info.get(field))
+        return updated_count
+
+    # only set fields that are currently empty
+    def deserialize_fields_conservative(self, fields, company_info):
+        updated_count = 0
+        for field in fields:
+            cur_value = getattr(self, field)
+            # update only if 0, "", or None/NULL
+            if not cur_value:
+                updated_count += self.update(field, company_info.get(field))
         return updated_count
 
     def serialize_fields(self, fields):
