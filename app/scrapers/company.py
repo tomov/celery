@@ -124,7 +124,7 @@ def update_company_helper(company, company_info, be_conservative):
     updated_count = 0
     if company_info:
         if be_conservative:
-            print 'd       be CONSERVATIVE => only empty fields'
+            print '       be CONSERVATIVE => only empty fields'
             updated_count += company.deserialize_fields_conservative(SUPPORTED_FIELDS, company_info)
         else:
             print '       DON\'T be conservative => update all'

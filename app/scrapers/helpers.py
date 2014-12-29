@@ -38,6 +38,8 @@ def fill_company_basics_from_linkedin_data(company_info, result):
     company_info['founded_on_year'] = result.get('foundedYear')
     # website
     company_info['website_url'] = result.get('websiteUrl')
+    # logo -- it's REALLY shitty
+    company_info['logo_url'] = result.get('logoUrl')
 
 def fill_company_team_size_from_linkedin_data(company_info, result):
     if 'employeeCountRange' in result and 'name' in result['employeeCountRange'] and 'code' in result['employeeCountRange']:
@@ -54,7 +56,7 @@ def fill_company_team_size_from_linkedin_data(company_info, result):
 
 def fill_company_email_domains_from_linkedin_data(company_info, result):
     if 'emailDomains' in result and 'values' in result['emailDomains'] and len(result['emailDomains']['values']) > 0:
-        company_info['email_domains_json'] = json.dumps(result['emailDomains'])
+        company_info['email_domains_json'] = json.dumps(result['emailDomains']['values'])
 
 def fill_company_logo_from_crunchbase_data(company_info, result):
     image_prefix = result['metadata']['image_path_prefix']
