@@ -257,15 +257,16 @@ def fetch_and_populate_company(name, linkedin_id, callback_url=None, crunchbase_
                     # get crunchbase name from cached data,
                     # if this time we didn't fetch it from the internets
                     result = json.loads(company.crunchbase_data)
-                    company_info = dict()
-                    fill_company_basics_from_crunchbase_data(company_info, result)
+                    crunchbase_info = dict()
+                    fill_company_basics_from_crunchbase_data(crunchbase_info, result)
                 # if linkedin name == crunchbase name, only add new info from linkedin
                 # otherwise, raise hell
                 # we will fix later (the last_linkedin_update == NULL)
                 if linkedin_info['name'] == crunchbase_info['name']:
                     update_company_with_linkedin_info(company, linkedin_info, be_conservative=True)
                 else:
-                    print '\n-------------------\n ALERT: name mismatch'
+                    print '-------------------\n'
+                    print '   ALERT ALERT ALERT ALERT!! NAME MISMATCH'
                     print ' ' + company.name.encode('utf8') + ',' + str(company.linkedin_id) + ': ' + crunchbase_info['name'].encode('utf8') + ' vs. ' + linkedin_info['name'].encode('utf8')
                     print '-------------------\n'
         db.session.commit()
