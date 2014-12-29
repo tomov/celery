@@ -53,7 +53,7 @@ def fill_company_team_size_from_linkedin_data(company_info, result):
                 company_info['employees_max'] = int(limits[1])
 
 def fill_company_email_domains_from_linkedin_data(company_info, result):
-    if 'emailDomains' in result and 'values' in result['emailDomains'] and len(result['emailDomains']['values'] > 0):
+    if 'emailDomains' in result and 'values' in result['emailDomains'] and len(result['emailDomains']['values']) > 0:
         company_info['email_domains_json'] = json.dumps(result['emailDomains'])
 
 def fill_company_logo_from_crunchbase_data(company_info, result):
@@ -82,7 +82,7 @@ def fill_company_industries_from_crunchbase_data(company_info, result):
 
 def fill_company_industries_from_linkedin_data(company_info, result):
     industries = []
-    if 'industries' in result and 'values' in result['industries'] and len(result['industries']['values'] > 0):
+    if 'industries' in result and 'values' in result['industries'] and len(result['industries']['values']) > 0:
         for industry_data in result['industries']['values']:
             industries.append(industry_data.get('name'))
     company_info['industries_json'] = json.dumps(industries)

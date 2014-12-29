@@ -35,7 +35,10 @@ linkedin = oauth.remote_app(
 
 @linkedin.tokengetter
 def get_linkedin_oauth_token():
-    return session.get('linkedin_token')
+    # TODO FIXME this is a super retarded hack
+    # temporary fix b/c there is no way I can log in via the celery queue...
+    return (u'AQXE5NRz92I8DMtkmDBiqpOML2K1_uHRB8zTGS6Y1vv2TFDgeowJu9FS9EpxLiN_Ydgv0j1G871X220jnJRCmXjejf99L6fkwMBFKtf3ekU6oHUx86BQFJuNtvY3rhdJc3gJKAkjMMamRqYlUBWNWL4ye2nORlzIGtwT7GKoTd5EDdvUj6c', '')
+    #return session.get('linkedin_token')
 
 def get_linkedin_id():
     return session.get('linkedin_id')

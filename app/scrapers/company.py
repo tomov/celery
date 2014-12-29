@@ -164,7 +164,7 @@ def fetch_company_info_from_crunchbase(company):
 @celery.task()
 def fetch_company_info_from_linkedin(company):
     print '   Task! scrape company from linkedin ' + company.name.encode('utf8') + ', linkedin id = ' + str(company.linkedin_id)
-    if not company.linkedin or company.linkedin.startswith('FAKE'):
+    if not company.linkedin_id or company.linkedin_id.startswith('FAKE'):
         print '            no or invalid linkedin id... returning None'
         return None
     company_info = fetch_company_info_by_linkedin_id(company.linkedin_id)
@@ -247,10 +247,19 @@ def fetch_and_populate_company(name, linkedin_id, callback_url=None, crunchbase_
         if linkedin_info:
             print '     waiting for linkedin result'
             linkedin_info = linkedin_info.wait()
-            if not crunchbase_info:
+            if not crunchbase_info and not company.crunchbase_data:
+                # if there is nothing from crunchbase,
+                # use everything from linkedin
                 update_company_with_linkedin_info(company, linkedin_info)
             else:
-                # if linkedin name == crunchbase name, only add new info
+                # otherwise, try to be smart...
+                if not crunchbase_info:
+                    # get crunchbase name from cached data,
+                    # if this time we didn't fetch it from the internets
+                    result = json.loads(company.crunchbase_data)
+                    company_info = dict()
+                    fill_company_basics_from_crunchbase_data(company_info, result)
+                # if linkedin name == crunchbase name, only add new info from linkedin
                 # otherwise, raise hell
                 # we will fix later (the last_linkedin_update == NULL)
                 if linkedin_info['name'] == crunchbase_info['name']:
