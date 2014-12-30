@@ -41,14 +41,14 @@ class CrunchBaseAPI:
         # keep trying different user_keys until it works...
         # this is to hack around the 2500 api calls per day limit
         # try the whole range of keys three times before giving up
-        for attempt in range(len(CRUNCHBASE_USER_KEYS * 3)):
+        for attempt in range(len(CRUNCHBASE_USER_KEYS) * 3):
             url = CrunchBaseAPI.url_template.format(operation, self.user_key, other, )
             print '                            url = ' + url
-            wait_secs = randint(1, 10)
+            wait_secs = randint(1, 3)
             result = None
             # keep trying the same key, increasing the wait interval on failures
             # this is to hack around the 40 calls per minute limit
-            while not result and wait_secs < 600:
+            while not result and wait_secs < 300:
                 try:
                     print '                                     waiting for ' + str(wait_secs) + ' sconds..'
                     sleep(wait_secs)

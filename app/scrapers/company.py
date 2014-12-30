@@ -3,6 +3,7 @@ import urllib
 import urllib2
 from datetime import datetime, timedelta
 from celery.result import allow_join_result
+from difflib import SequenceMatcher
 
 from app import celery
 from app.models import db, Company
@@ -27,6 +28,7 @@ EXPIRATION_DAYS = 120
 # you can use it to check if that was the real company you were supposed to fetch
 # by comparing with the name in the data
 SUPPORTED_FIELDS = [
+        'name', # TODO TODO remove
         'crunchbase_url',
         'crunchbase_path',
         'logo_url',
@@ -115,10 +117,17 @@ def fetch_company_info_by_linkedin_id(linkedin_id):
     fill_company_team_size_from_linkedin_data(company_info, result)
     fill_company_email_domains_from_linkedin_data(company_info, result)
     fill_company_industries_from_linkedin_data(company_info, result)
-    fill_company_offices_from_linkedin_data(company_info, result)
+    fill_company_offices_and_headquarters_from_linkedin_data(company_info, result)
     company_info['linkedin_data'] = result_raw
     print 'done with ' + linkedin_id
     return company_info
+
+def clear_company_info(company):
+    fields_to_erase = list(SUPPORTED_FIELDS)
+    fields_to_erase.remove("name")
+    fields_to_erase.remove("crunchbase_data")
+    fields_to_erase.remove("linkedin_data")
+    company.clear_fields(fields_to_erase)
 
 def update_company_helper(company, company_info, be_conservative):
     updated_count = 0
@@ -129,6 +138,7 @@ def update_company_helper(company, company_info, be_conservative):
         else:
             print '       DON\'T be conservative => update all'
             updated_count += company.deserialize_fields(SUPPORTED_FIELDS, company_info)
+    return updated_count
 
 def update_company_with_crunchbase_info(company, company_info, be_conservative=False):
     print '  populate company w/ crunchbase data ' + str(company.name.encode('utf8'))
@@ -170,15 +180,33 @@ def fetch_company_info_from_linkedin(company):
     company_info = fetch_company_info_by_linkedin_id(company.linkedin_id)
     return company_info
 
-def serialize_and_send_company_to_callback_url(company, callback_url):
+def serialize_and_send_company_to_callback_url(company, callback_url, do_erase_current_field_values=False):
     company_info = company.serialize_fields(SUPPORTED_FIELDS)
     company_info['remote_id'] = company.id
+    if do_erase_current_field_values:
+        company_info['do_erase_current_field_values'] = True
     print '  sending to callback url ' + str(callback_url)
     data = urllib.urlencode({'data': json.dumps(company_info)})
     req = urllib2.Request(callback_url, data)
     resp = urllib2.urlopen(req)
     resp_html = resp.read()
     print '  response to callback: ' + str(resp_html)
+
+# TODO move to helper file? or keep helper file full of scraper things only... or move them to their own helper file? or split helper file into sections... maybe that's the best way to go 
+def company_names_are_similar(original_name, candidate_name):
+    if original_name.lower() == candidate_name.lower():
+        ratio = 1
+    elif original_name.lower().startswith(candidate_name.lower()) and not original_name.lower()[len(candidate_name)].isalnum():
+        ratio = 0.900000001
+    elif candidate_name.lower().startswith(original_name.lower()) and not candidate_name.lower()[len(original_name)].isalnum():
+        ratio = 0.900000001
+    else:
+        s = SequenceMatcher(None, original_name.lower(), candidate_name.lower())
+        ratio = s.ratio()
+    print '.          ------ mAtCh ----- >>>> ' + original_name.encode('utf8') + ' vs. ' + candidate_name.encode('utf8') + ': ' + str(ratio) + ' <--------- !!'
+    if ratio < 0.89:
+        return False
+    return True
 
 # Given a company name and linkedin id,
 # 1) check if it exists in the db, first by linkedin id then by name
@@ -237,6 +265,7 @@ def fetch_and_populate_company(name, linkedin_id, callback_url=None, crunchbase_
         crunchbase_info = fetch_company_info_from_crunchbase.delay(company)
         linkedin_info = fetch_company_info_from_linkedin.delay(company)
 
+    do_erase_current_field_values = False
     with allow_join_result():
         # crunchbase update
         if crunchbase_info:
@@ -247,34 +276,40 @@ def fetch_and_populate_company(name, linkedin_id, callback_url=None, crunchbase_
         if linkedin_info:
             print '     waiting for linkedin result'
             linkedin_info = linkedin_info.wait()
-            if not crunchbase_info and not company.crunchbase_data:
-                # if there is nothing from crunchbase,
-                # use everything from linkedin
-                update_company_with_linkedin_info(company, linkedin_info)
+            if not linkedin_info:
+                print 'Nothing came back from linkedin...'
             else:
-                # otherwise, try to be smart...
-                if not crunchbase_info:
-                    # get crunchbase name from cached data,
-                    # if this time we didn't fetch it from the internets
-                    result = json.loads(company.crunchbase_data)
-                    crunchbase_info = dict()
-                    fill_company_basics_from_crunchbase_data(crunchbase_info, result)
-                # if linkedin name == crunchbase name, only add new info from linkedin
-                # otherwise, raise hell
-                # we will fix later (the last_linkedin_update == NULL)
-                if linkedin_info['name'] == crunchbase_info['name']:
-                    update_company_with_linkedin_info(company, linkedin_info, be_conservative=True)
+                if not crunchbase_info and not company.crunchbase_data:
+                    # if there is nothing from crunchbase,
+                    # use everything from linkedin
+                    update_company_with_linkedin_info(company, linkedin_info)
                 else:
-                    print '-------------------\n'
-                    print '   ALERT ALERT ALERT ALERT!! NAME MISMATCH'
-                    print ' ' + company.name.encode('utf8') + ',' + str(company.linkedin_id) + ': ' + crunchbase_info['name'].encode('utf8') + ' vs. ' + linkedin_info['name'].encode('utf8')
-                    print '-------------------\n'
+                    # TODO TODO change this logic once things settle down
+                    # otherwise, try to be smart...
+                    if not crunchbase_info:
+                        # get crunchbase name from cached data,
+                        # if we didn't fetch it from the internets
+                        result = json.loads(company.crunchbase_data)
+                        crunchbase_info = dict()
+                        fill_company_basics_from_crunchbase_data(crunchbase_info, result)
+                    # if linkedin name ~= crunchbase name, only add new info from linkedin
+                    # otherwise, assume we got info for the wrong company from crunchbase
+                    # => erase all info and update with linkedin
+                    if crunchbase_info['name'] and company_names_are_similar(linkedin_info['name'], crunchbase_info['name']):
+                        update_company_with_linkedin_info(company, linkedin_info, be_conservative=True)
+                    else:
+                        clear_company_info(company)
+                        # force erase in cache too
+                        do_erase_current_field_values = True
+                        update_company_with_linkedin_info(company, linkedin_info)
+                        print '.      --------------------   ALERT ALERT ALERT ALERT!! NAME MISMATCH'
+                        print '.      ------------------- ' + company.name.encode('utf8') + ',' + str(company.linkedin_id) + ': ' + crunchbase_info['name'].encode('utf8') + ' vs. ' + linkedin_info['name'].encode('utf8')
         db.session.commit()
   
     # 3) send back company to the mother ship
     print 'callback url = ' + str(callback_url)
     if callback_url:
-        serialize_and_send_company_to_callback_url(company, callback_url)
+        serialize_and_send_company_to_callback_url(company, callback_url, do_erase_current_field_values)
     return 'Done?' # TODO return meaningful result 
 
 # rescrape fields using locally stored data

@@ -80,6 +80,10 @@ class Company(db.Model):
             return True
         return False
 
+    def clear_fields(self, fields):
+        for field in fields:
+            setattr(self, field, None)
+
     def deserialize_fields(self, fields, company_info):
         updated_count = 0
         for field in fields:

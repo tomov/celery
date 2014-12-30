@@ -100,18 +100,24 @@ def fill_company_offices_from_crunchbase_data(company_info, result):
             })
     company_info['offices_json'] = json.dumps(offices)
 
-def fill_company_offices_from_linkedin_data(company_info, result):
+def fill_company_offices_and_headquarters_from_linkedin_data(company_info, result):
     offices = []
-    if 'locations' in result:
-        for location_data in result['locations']:
+    headquarters = None 
+    if 'locations' in result and 'values' in result['locations'] and len(result['industries']['values']) > 0:
+        for location_data in result['locations']['values']:
             if 'address' in location_data:
-                offices.append({
+                office = {
                     'city': location_data['address'].get('city'),
                     'state': location_data['address'].get('state'),
                     'region_code': location_data['address'].get('regionCode'),
                     'country_code': location_data['address'].get('countryCode')
-                })
+                }
+                offices.append(office)
+                if (not headquarters or location_data.get('isHeadquarters')) and office['city']:
+                    headquarters = office 
     company_info['offices_json'] = json.dumps(offices)
+    if headquarters:
+        company_info['headquarters_json'] = json.dumps(headquarters)
 
 def fetch_and_fill_company_funding_rounds_from_crunchbase_data(company_info, result):
     funding_rounds = []
