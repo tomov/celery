@@ -2,7 +2,7 @@ Flask==0.10.1
 Flask-OAuthlib==0.7.0
 Flask-SQLAlchemy==2.0
 Flask-SSLify==0.1.4
-Jinja2==2.7.3
+Jinja2==2.11.3
 MarkupSafe==0.23
 MySQL-python==1.2.5
 PyMySQL==0.6.2
