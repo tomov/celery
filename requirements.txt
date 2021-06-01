@@ -20,5 +20,5 @@ oauthlib==0.6.3
 pyflakes==0.8.1
 pytz==2014.7
 requests==2.4.3
-urllib3==1.9.1
+urllib3==1.26.5
 wsgiref==0.1.2
